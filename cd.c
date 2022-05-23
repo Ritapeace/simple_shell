@@ -1,165 +1,105 @@
-#include "main.h"
+#include "shell.h"
+
+char *_strchr(char *s, char c);
+int _strspn(char *s, char *accept);
+int _strcmp(char *s1, char *s2);
+int _strncmp(const char *s1, const char *s2, size_t n);
 
 /**
- * cd_dot - changes to the parent directory
+ * _strchr - Locates a character in a string.
+ * @s: The string to be searched.
+ * @c: The character to be located.
  *
- * @datash: data relevant (environ)
- *
- * Return: no return
+ * Return: If c is found - a pointer to the first occurence.
+ *         If c is not found - NULL.
  */
-void cd_dot(data_shell *datash)
+char *_strchr(char *s, char c)
 {
-	char pwd[PATH_MAX];
-	char *dir, *cp_pwd, *cp_strtok_pwd;
+	int index;
 
-	getcwd(pwd, sizeof(pwd));
-	cp_pwd = _strdup(pwd);
-	set_env("OLDPWD", cp_pwd, datash);
-	dir = datash->args[1];
-	if (_strcmp(".", dir) == 0)
+	for (index = 0; s[index]; index++)
 	{
-		set_env("PWD", cp_pwd, datash);
-		free(cp_pwd);
-		return;
+		if (s[index] == c)
+			return (s + index);
 	}
-	if (_strcmp("/", cp_pwd) == 0)
-	{
-		free(cp_pwd);
-		return;
-	}
-	cp_strtok_pwd = cp_pwd;
-	rev_string(cp_strtok_pwd);
-	cp_strtok_pwd = _strtok(cp_strtok_pwd, "/");
-	if (cp_strtok_pwd != NULL)
-	{
-		cp_strtok_pwd = _strtok(NULL, "\0");
 
-		if (cp_strtok_pwd != NULL)
-			rev_string(cp_strtok_pwd);
-	}
-	if (cp_strtok_pwd != NULL)
-	{
-		chdir(cp_strtok_pwd);
-		set_env("PWD", cp_strtok_pwd, datash);
-	}
-	else
-	{
-		chdir("/");
-		set_env("PWD", "/", datash);
-	}
-	datash->status = 0;
-	free(cp_pwd);
+	return (NULL);
 }
 
 /**
- * cd_to - changes to a directory given
- * by the user
+ * _strspn - Gets the length of a prefix substring.
+ * @s: The string to be searched.
+ * @accept: The prefix to be measured.
  *
- * @datash: data relevant (directories)
- * Return: no return
+ * Return: The number of bytes in s which
+ *         consist only of bytes from accept.
  */
-void cd_to(data_shell *datash)
+int _strspn(char *s, char *accept)
 {
-	char pwd[PATH_MAX];
-	char *dir, *cp_pwd, *cp_dir;
+	int bytes = 0;
+	int index;
 
-	getcwd(pwd, sizeof(pwd));
-
-	dir = datash->args[1];
-	if (chdir(dir) == -1)
+	while (*s)
 	{
-		get_error(datash, 2);
-		return;
+		for (index = 0; accept[index]; index++)
+		{
+			if (*s == accept[index])
+			{
+				bytes++;
+				break;
+			}
+		}
+		s++;
 	}
-
-	cp_pwd = _strdup(pwd);
-	set_env("OLDPWD", cp_pwd, datash);
-
-	cp_dir = _strdup(dir);
-	set_env("PWD", cp_dir, datash);
-
-	free(cp_pwd);
-	free(cp_dir);
-
-	datash->status = 0;
-
-	chdir(dir);
+	return (bytes);
 }
 
 /**
- * cd_previous - changes to the previous directory
+ * _strcmp - Compares two strings.
+ * @s1: The first string to be compared.
+ * @s2: The second string to be compared.
  *
- * @datash: data relevant (environ)
- * Return: no return
+ * Return: Positive byte difference if s1 > s2
+ *         0 if s1 = s2
+ *         Negative byte difference if s1 < s2
  */
-void cd_previous(data_shell *datash)
+int _strcmp(char *s1, char *s2)
 {
-	char pwd[PATH_MAX];
-	char *p_pwd, *p_oldpwd, *cp_pwd, *cp_oldpwd;
+	while (*s1 && *s2 && *s1 == *s2)
+	{
+		s1++;
+		s2++;
+	}
 
-	getcwd(pwd, sizeof(pwd));
-	cp_pwd = _strdup(pwd);
+	if (*s1 != *s2)
+		return (*s1 - *s2);
 
-	p_oldpwd = _getenv("OLDPWD", datash->_environ);
-
-	if (p_oldpwd == NULL)
-		cp_oldpwd = cp_pwd;
-	else
-		cp_oldpwd = _strdup(p_oldpwd);
-
-	set_env("OLDPWD", cp_pwd, datash);
-
-	if (chdir(cp_oldpwd) == -1)
-		set_env("PWD", cp_pwd, datash);
-	else
-		set_env("PWD", cp_oldpwd, datash);
-
-	p_pwd = _getenv("PWD", datash->_environ);
-
-	write(STDOUT_FILENO, p_pwd, _strlen(p_pwd));
-	write(STDOUT_FILENO, "\n", 1);
-
-	free(cp_pwd);
-	if (p_oldpwd)
-		free(cp_oldpwd);
-
-	datash->status = 0;
-
-	chdir(p_pwd);
+	return (0);
 }
 
 /**
- * cd_to_home - changes to home directory
+ * _strncmp - Compare two strings.
+ * @s1: Pointer to a string.
+ * @s2: Pointer to a string.
+ * @n: The first n bytes of the strings to compare.
  *
- * @datash: data relevant (environ)
- * Return: no return
+ * Return: Less than 0 if s1 is shorter than s2.
+ *         0 if s1 and s2 match.
+ *         Greater than 0 if s1 is longer than s2.
  */
-void cd_to_home(data_shell *datash)
+int _strncmp(const char *s1, const char *s2, size_t n)
 {
-	char *p_pwd, *home;
-	char pwd[PATH_MAX];
+	size_t i;
 
-	getcwd(pwd, sizeof(pwd));
-	p_pwd = _strdup(pwd);
-
-	home = _getenv("HOME", datash->_environ);
-
-	if (home == NULL)
+	for (i = 0; s1[i] && s2[i] && i < n; i++)
 	{
-		set_env("OLDPWD", p_pwd, datash);
-		free(p_pwd);
-		return;
+		if (s1[i] > s2[i])
+			return (s1[i] - s2[i]);
+		else if (s1[i] < s2[i])
+			return (s1[i] - s2[i]);
 	}
-
-	if (chdir(home) == -1)
-	{
-		get_error(datash, 2);
-		free(p_pwd);
-		return;
-	}
-
-	set_env("OLDPWD", p_pwd, datash);
-	set_env("PWD", home, datash);
-	free(p_pwd);
-	datash->status = 0;
+	if (i == n)
+		return (0);
+	else
+		return (-15);
 }

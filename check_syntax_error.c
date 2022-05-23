@@ -1,177 +1,104 @@
-#include "main.h"
+#include "shell.h"
+
+int token_len(char *str, char *delim);
+int count_tokens(char *str, char *delim);
+char **_strtok(char *line, char *delim);
 
 /**
- * repeated_char - counts the repetitions of a char
+ * token_len - Locates the delimiter index marking the end
+ *             of the first token contained within a string.
+ * @str: The string to be searched.
+ * @delim: The delimiter character.
  *
- * @input: input string
- * @i: index
- * Return: repetitions
+ * Return: The delimiter index marking the end of
+ *         the intitial token pointed to be str.
  */
-int repeated_char(char *input, int i)
+int token_len(char *str, char *delim)
 {
-	if (*(input - 1) == *input)
-		return (repeated_char(input - 1, i + 1));
+	int index = 0, len = 0;
 
-	return (i);
+	while (*(str + index) && *(str + index) != *delim)
+	{
+		len++;
+		index++;
+	}
+
+	return (len);
 }
 
 /**
- * error_sep_op - finds syntax errors
+ * count_tokens - Counts the number of delimited
+ *                words contained within a string.
+ * @str: The string to be searched.
+ * @delim: The delimiter character.
  *
- * @input: input string
- * @i: index
- * @last: last char read
- * Return: index of error. 0 when there are no
- * errors
+ * Return: The number of words contained within str.
  */
-int error_sep_op(char *input, int i, char last)
+int count_tokens(char *str, char *delim)
 {
-	int count;
+	int index, tokens = 0, len = 0;
 
-	count = 0;
-	if (*input == '\0')
-		return (0);
+	for (index = 0; *(str + index); index++)
+		len++;
 
-	if (*input == ' ' || *input == '\t')
-		return (error_sep_op(input + 1, i + 1, last));
-
-	if (*input == ';')
-		if (last == '|' || last == '&' || last == ';')
-			return (i);
-
-	if (*input == '|')
+	for (index = 0; index < len; index++)
 	{
-		if (last == ';' || last == '&')
-			return (i);
-
-		if (last == '|')
+		if (*(str + index) != *delim)
 		{
-			count = repeated_char(input, 0);
-			if (count == 0 || count > 1)
-				return (i);
+			tokens++;
+			index += token_len(str + index, delim);
 		}
 	}
 
-	if (*input == '&')
-	{
-		if (last == ';' || last == '|')
-			return (i);
+	return (tokens);
+}
 
-		if (last == '&')
+/**
+ * _strtok - Tokenizes a string.
+ * @line: The string.
+ * @delim: The delimiter character to tokenize the string by.
+ *
+ * Return: A pointer to an array containing the tokenized words.
+ */
+char **_strtok(char *line, char *delim)
+{
+	char **ptr;
+	int index = 0, tokens, t, letters, l;
+
+	tokens = count_tokens(line, delim);
+	if (tokens == 0)
+		return (NULL);
+
+	ptr = malloc(sizeof(char *) * (tokens + 2));
+	if (!ptr)
+		return (NULL);
+
+	for (t = 0; t < tokens; t++)
+	{
+		while (line[index] == *delim)
+			index++;
+
+		letters = token_len(line + index, delim);
+
+		ptr[t] = malloc(sizeof(char) * (letters + 1));
+		if (!ptr[t])
 		{
-			count = repeated_char(input, 0);
-			if (count == 0 || count > 1)
-				return (i);
+			for (index -= 1; index >= 0; index--)
+				free(ptr[index]);
+			free(ptr);
+			return (NULL);
 		}
+
+		for (l = 0; l < letters; l++)
+		{
+			ptr[t][l] = line[index];
+			index++;
+		}
+
+		ptr[t][l] = '\0';
 	}
+	ptr[t] = NULL;
+	ptr[t + 1] = NULL;
 
-	return (error_sep_op(input + 1, i + 1, *input));
-}
-
-/**
- * first_char - finds index of the first char
- *
- * @input: input string
- * @i: index
- * Return: 1 if there is an error. 0 in other case.
- */
-int first_char(char *input, int *i)
-{
-
-	for (*i = 0; input[*i]; *i += 1)
-	{
-		if (input[*i] == ' ' || input[*i] == '\t')
-			continue;
-
-		if (input[*i] == ';' || input[*i] == '|' || input[*i] == '&')
-			return (-1);
-
-		break;
-	}
-
-	return (0);
-}
-
-/**
- * print_syntax_error - prints when a syntax error is found
- *
- * @datash: data structure
- * @input: input string
- * @i: index of the error
- * @bool: to control msg error
- * Return: no return
- */
-void print_syntax_error(data_shell *datash, char *input, int i, int bool)
-{
-	char *msg, *msg2, *msg3, *error, *counter;
-	int length;
-
-	if (input[i] == ';')
-	{
-		if (bool == 0)
-			msg = (input[i + 1] == ';' ? ";;" : ";");
-		else
-			msg = (input[i - 1] == ';' ? ";;" : ";");
-	}
-
-	if (input[i] == '|')
-		msg = (input[i + 1] == '|' ? "||" : "|");
-
-	if (input[i] == '&')
-		msg = (input[i + 1] == '&' ? "&&" : "&");
-
-	msg2 = ": Syntax error: \"";
-	msg3 = "\" unexpected\n";
-	counter = aux_itoa(datash->counter);
-	length = _strlen(datash->av[0]) + _strlen(counter);
-	length += _strlen(msg) + _strlen(msg2) + _strlen(msg3) + 2;
-
-	error = malloc(sizeof(char) * (length + 1));
-	if (error == 0)
-	{
-		free(counter);
-		return;
-	}
-	_strcpy(error, datash->av[0]);
-	_strcat(error, ": ");
-	_strcat(error, counter);
-	_strcat(error, msg2);
-	_strcat(error, msg);
-	_strcat(error, msg3);
-	_strcat(error, "\0");
-
-	write(STDERR_FILENO, error, length);
-	free(error);
-	free(counter);
-}
-
-/**
- * check_syntax_error - intermediate function to
- * find and print a syntax error
- *
- * @datash: data structure
- * @input: input string
- * Return: 1 if there is an error. 0 in other case
- */
-int check_syntax_error(data_shell *datash, char *input)
-{
-	int begin = 0;
-	int f_char = 0;
-	int i = 0;
-
-	f_char = first_char(input, &begin);
-	if (f_char == -1)
-	{
-		print_syntax_error(datash, input, begin, 0);
-		return (1);
-	}
-
-	i = error_sep_op(input + begin, 0, *(input + begin));
-	if (i != 0)
-	{
-		print_syntax_error(datash, input, begin + i, 1);
-		return (1);
-	}
-
-	return (0);
+	return (ptr);
 }

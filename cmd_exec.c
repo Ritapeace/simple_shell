@@ -1,205 +1,125 @@
-#include "main.h"
+#include "shell.h"
+
+int cant_open(char *file_path);
+int proc_file_commands(char *file_path, int *exe_ret);
 
 /**
- * is_cdir - checks ":" if is in the current directory.
- * @path: type char pointer char.
- * @i: type int pointer of index.
- * Return: 1 if the path is searchable in the cd, 0 otherwise.
+ * cant_open - If the file doesn't exist or lacks proper permissions, print
+ * a cant open error.
+ * @file_path: Path to the supposed file.
+ *
+ * Return: 127.
  */
-int is_cdir(char *path, int *i)
-{
-	if (path[*i] == ':')
-		return (1);
 
-	while (path[*i] != ':' && path[*i])
+int cant_open(char *file_path)
+{
+	char *error, *hist_str;
+	int len;
+
+	hist_str = _itoa(hist);
+	if (!hist_str)
+		return (127);
+
+	len = _strlen(name) + _strlen(hist_str) + _strlen(file_path) + 16;
+	error = malloc(sizeof(char) * (len + 1));
+	if (!error)
 	{
-		*i += 1;
+		free(hist_str);
+		return (127);
 	}
 
-	if (path[*i])
-		*i += 1;
+	_strcpy(error, name);
+	_strcat(error, ": ");
+	_strcat(error, hist_str);
+	_strcat(error, ": Can't open ");
+	_strcat(error, file_path);
+	_strcat(error, "\n");
 
-	return (0);
+	free(hist_str);
+	write(STDERR_FILENO, error, len);
+	free(error);
+	return (127);
 }
 
 /**
- * _which - locates a command
+ * proc_file_commands - Takes a file and attempts to run the commands stored
+ * within.
+ * @file_path: Path to the file.
+ * @exe_ret: Return value of the last executed command.
  *
- * @cmd: command name
- * @_environ: environment variable
- * Return: location of the command.
+ * Return: If file couldn't be opened - 127.
+ *	   If malloc fails - -1.
+ *	   Otherwise the return value of the last command ran.
  */
-char *_which(char *cmd, char **_environ)
+int proc_file_commands(char *file_path, int *exe_ret)
 {
-	char *path, *ptr_path, *token_path, *dir;
-	int len_dir, len_cmd, i;
-	struct stat st;
+	ssize_t file, b_read, i;
+	unsigned int line_size = 0;
+	unsigned int old_size = 120;
+	char *line, **args, **front;
+	char buffer[120];
+	int ret;
 
-	path = _getenv("PATH", _environ);
-	if (path)
+	hist = 0;
+	file = open(file_path, O_RDONLY);
+	if (file == -1)
 	{
-		ptr_path = _strdup(path);
-		len_cmd = _strlen(cmd);
-		token_path = _strtok(ptr_path, ":");
-		i = 0;
-		while (token_path != NULL)
-		{
-			if (is_cdir(path, &i))
-				if (stat(cmd, &st) == 0)
-					return (cmd);
-			len_dir = _strlen(token_path);
-			dir = malloc(len_dir + len_cmd + 2);
-			_strcpy(dir, token_path);
-			_strcat(dir, "/");
-			_strcat(dir, cmd);
-			_strcat(dir, "\0");
-			if (stat(dir, &st) == 0)
-			{
-				free(ptr_path);
-				return (dir);
-			}
-			free(dir);
-			token_path = _strtok(NULL, ":");
-		}
-		free(ptr_path);
-		if (stat(cmd, &st) == 0)
-			return (cmd);
-		return (NULL);
+		*exe_ret = cant_open(file_path);
+		return (*exe_ret);
 	}
-	if (cmd[0] == '/')
-		if (stat(cmd, &st) == 0)
-			return (cmd);
-	return (NULL);
-}
-
-/**
- * is_executable - determines if is an executable
- *
- * @datash: data structure
- * Return: 0 if is not an executable, other number if it does
- */
-int is_executable(data_shell *datash)
-{
-	struct stat st;
-	int i;
-	char *input;
-
-	input = datash->args[0];
-	for (i = 0; input[i]; i++)
+	line = malloc(sizeof(char) * old_size);
+	if (!line)
+		return (-1);
+	do
 	{
-		if (input[i] == '.')
+		b_read = read(file, buffer, 119);
+		if (b_read == 0 && line_size == 0)
+			return (*exe_ret);
+		buffer[b_read] = '\0';
+		line_size += b_read;
+		line = _realloc(line, old_size, line_size);
+		_strcat(line, buffer);
+		old_size = line_size;
+	} while (b_read);
+	for (i = 0; line[i] == '\n'; i++)
+		line[i] = ' ';
+	for (; i < line_size; i++)
+	{
+		if (line[i] == '\n')
 		{
-			if (input[i + 1] == '.')
-				return (0);
-			if (input[i + 1] == '/')
-				continue;
-			else
-				break;
+			line[i] = ';';
+			for (i += 1; i < line_size && line[i] == '\n'; i++)
+				line[i] = ' ';
 		}
-		else if (input[i] == '/' && i != 0)
-		{
-			if (input[i + 1] == '.')
-				continue;
-			i++;
-			break;
-		}
-		else
-			break;
 	}
-	if (i == 0)
+	variable_replacement(&line, exe_ret);
+	handle_line(&line, line_size);
+	args = _strtok(line, " ");
+	free(line);
+	if (!args)
 		return (0);
-
-	if (stat(input + i, &st) == 0)
+	if (check_args(args) != 0)
 	{
-		return (i);
+		*exe_ret = 2;
+		free_args(args, args);
+		return (*exe_ret);
 	}
-	get_error(datash, 127);
-	return (-1);
-}
+	front = args;
 
-/**
- * check_error_cmd - verifies if user has permissions to access
- *
- * @dir: destination directory
- * @datash: data structure
- * Return: 1 if there is an error, 0 if not
- */
-int check_error_cmd(char *dir, data_shell *datash)
-{
-	if (dir == NULL)
+	for (i = 0; args[i]; i++)
 	{
-		get_error(datash, 127);
-		return (1);
-	}
-
-	if (_strcmp(datash->args[0], dir) != 0)
-	{
-		if (access(dir, X_OK) == -1)
+		if (_strncmp(args[i], ";", 1) == 0)
 		{
-			get_error(datash, 126);
-			free(dir);
-			return (1);
-		}
-		free(dir);
-	}
-	else
-	{
-		if (access(datash->args[0], X_OK) == -1)
-		{
-			get_error(datash, 126);
-			return (1);
+			free(args[i]);
+			args[i] = NULL;
+			ret = call_args(args, front, exe_ret);
+			args = &args[++i];
+			i = 0;
 		}
 	}
 
-	return (0);
-}
+	ret = call_args(args, front, exe_ret);
 
-/**
- * cmd_exec - executes command lines
- *
- * @datash: data relevant (args and input)
- * Return: 1 on success.
- */
-int cmd_exec(data_shell *datash)
-{
-	pid_t pd;
-	pid_t wpd;
-	int state;
-	int exec;
-	char *dir;
-	(void) wpd;
-
-	exec = is_executable(datash);
-	if (exec == -1)
-		return (1);
-	if (exec == 0)
-	{
-		dir = _which(datash->args[0], datash->_environ);
-		if (check_error_cmd(dir, datash) == 1)
-			return (1);
-	}
-
-	pd = fork();
-	if (pd == 0)
-	{
-		if (exec == 0)
-			dir = _which(datash->args[0], datash->_environ);
-		else
-			dir = datash->args[0];
-		execve(dir + exec, datash->args, datash->_environ);
-	}
-	else if (pd < 0)
-	{
-		perror(datash->av[0]);
-		return (1);
-	}
-	else
-	{
-		do {
-			wpd = waitpid(pd, &state, WUNTRACED);
-		} while (!WIFEXITED(state) && !WIFSIGNALED(state));
-	}
-
-	datash->status = state / 256;
-	return (1);
+	free(front);
+	return (ret);
 }

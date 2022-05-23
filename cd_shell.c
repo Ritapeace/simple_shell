@@ -1,44 +1,86 @@
-#include "main.h"
+#include "shell.h"
+
+int _strlen(const char *s);
+char *_strcpy(char *dest, const char *src);
+char *_strcat(char *dest, const char *src);
+char *_strncat(char *dest, const char *src, size_t n);
 
 /**
- * cd_shell - changes current directory
+ * _strlen - Returns the length of a string.
+ * @s: A pointer to the characters string.
  *
- * @datash: data relevant
- * Return: 1 on success
+ * Return: The length of the character string.
  */
-int cd_shell(data_shell *datash)
+int _strlen(const char *s)
 {
-	char *dir;
-	int ishome, ishome2, isddash;
+	int length = 0;
 
-	dir = datash->args[1];
+	if (!s)
+		return (length);
+	for (length = 0; s[length]; length++)
+		;
+	return (length);
+}
 
-	if (dir != NULL)
-	{
-		ishome = _strcmp("$HOME", dir);
-		ishome2 = _strcmp("~", dir);
-		isddash = _strcmp("--", dir);
-	}
+/**
+ * _strcpy - Copies the string pointed to by src, including the
+ *           terminating null byte, to the buffer pointed by des.
+ * @dest: Pointer to the destination of copied string.
+ * @src: Pointer to the src of the source string.
+ *
+ * Return: Pointer to dest.
+ */
+char *_strcpy(char *dest, const char *src)
+{
+	size_t i;
 
-	if (dir == NULL || !ishome || !ishome2 || !isddash)
-	{
-		cd_to_home(datash);
-		return (1);
-	}
+	for (i = 0; src[i] != '\0'; i++)
+		dest[i] = src[i];
+	dest[i] = '\0';
+	return (dest);
+}
 
-	if (_strcmp("-", dir) == 0)
-	{
-		cd_previous(datash);
-		return (1);
-	}
+/**
+ * _strcat - Concantenates two strings.
+ * @dest: Pointer to destination string.
+ * @src: Pointer to source string.
+ *
+ * Return: Pointer to destination string.
+ */
+char *_strcat(char *dest, const char *src)
+{
+	char *destTemp;
+	const char *srcTemp;
 
-	if (_strcmp(".", dir) == 0 || _strcmp("..", dir) == 0)
-	{
-		cd_dot(datash);
-		return (1);
-	}
+	destTemp = dest;
+	srcTemp = src;
 
-	cd_to(datash);
+	while (*destTemp != '\0')
+		destTemp++;
 
-	return (1);
+	while (*srcTemp != '\0')
+		*destTemp++ = *srcTemp++;
+	*destTemp = '\0';
+	return (dest);
+}
+
+/**
+ * _strncat - Concantenates two strings where n number
+ *            of bytes are copied from source.
+ * @dest: Pointer to destination string.
+ * @src: Pointer to source string.
+ * @n: n bytes to copy from src.
+ *
+ * Return: Pointer to destination string.
+ */
+char *_strncat(char *dest, const char *src, size_t n)
+{
+	size_t dest_len = _strlen(dest);
+	size_t i;
+
+	for (i = 0; i < n && src[i] != '\0'; i++)
+		dest[dest_len + i] = src[i];
+	dest[dest_len + i] = '\0';
+
+	return (dest);
 }
