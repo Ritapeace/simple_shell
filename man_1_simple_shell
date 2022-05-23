@@ -1,4 +1,12 @@
+<<<<<<< HEAD
 .TH SHELLBY 1 "May 2022" "Holberton School" "0x15. C - Simple Shell"
+=======
+B.\"Manpage for simple shell
+.\"Created by Rita Peace and Ogoke Williams.
+
+.TH SODASH 1 "May 2022" "Holberton School" "SODA SHELL - Simple Shell man page"
+
+>>>>>>> 121cdd70f6b047031dee15ee2c7ca3cb95b0c96c
 .SH NAME
 .B shellby\fR \- simple UNIX command interpreter
 .SH SYNOPSIS
@@ -176,7 +184,12 @@ Upon failure, prints a message to \fBstderr\fR.
 .SH SEE ALSO
 access(2), chdir(2), execve(2), _exit(2), exit(3), fflush(3), fork(2), free(3), isatty(3), getcwd(3), malloc(3), open(2), read(2), sh(1), signal(2), stat(2), wait(2), write(2)
 
+<<<<<<< HEAD
 .B Shellby\fR emulates basic functionality of the \fBsh\fR shell.
 This man page borrows from the corresponding man pages sh(1) and dash(1).
 .SH AUTHOR
 Rita Peace, Ogoke Williams.
+=======
+.SH AUTHORS
+Rita Peace and Ogoke Williams
+>>>>>>> 121cdd70f6b047031dee15ee2c7ca3cb95b0c96c
