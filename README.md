@@ -1,1 +1,1 @@
-COLLABORATORS: RITA PEACE AND OGOKE WILLIAMS
+collaborators; Rita Peace and Ogoke Williams

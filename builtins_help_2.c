@@ -1,41 +1,46 @@
-#include "main.h"
+#include "shell.h"
+
+void help_env(void);
+void help_setenv(void);
+void help_unsetenv(void);
+void help_history(void);
 
 /**
- * aux_help - Help information for the builtin help.
- * Return: no return
+ * help_env - Displays information on the shellby builtin command 'env'.
  */
-void aux_help(void)
-{
-	char *help = "help: help [-dms] [pattern ...]\n";
 
-	write(STDOUT_FILENO, help, _strlen(help));
-	help = "\tDisplay information about builtin commands.\n ";
-	write(STDOUT_FILENO, help, _strlen(help));
-	help = "Displays brief summaries of builtin commands.\n";
-	write(STDOUT_FILENO, help, _strlen(help));
+void help_env(void)
+{
+	char *msg = "env: env\n\tPrints the current environment.\n";
+
+	write(STDOUT_FILENO, msg, _strlen(msg));
 }
+
 /**
- * aux_help_alias - Help information for the builtin alias.
- * Return: no return
+ * help_setenv - Displays information on the shellby builtin command 'setenv'.
  */
-void aux_help_alias(void)
+void help_setenv(void)
 {
-	char *help = "alias: alias [-p] [name[=value]...]\n";
+	char *msg = "setenv: setenv [VARIABLE] [VALUE]\n\tInitializes a new";
 
-	write(STDOUT_FILENO, help, _strlen(help));
-	help = "\tDefine or display aliases.\n ";
-	write(STDOUT_FILENO, help, _strlen(help));
+	write(STDOUT_FILENO, msg, _strlen(msg));
+	msg = "environment variable, or modifies an existing one.\n\n";
+	write(STDOUT_FILENO, msg, _strlen(msg));
+	msg = "\tUpon failure, prints a message to stderr.\n";
+	write(STDOUT_FILENO, msg, _strlen(msg));
 }
+
 /**
- * aux_help_cd - Help information for the builtin alias.
- * Return: no return
+ * help_unsetenv - Displays information on the shellby builtin command
+ * 'unsetenv'.
  */
-void aux_help_cd(void)
+void help_unsetenv(void)
 {
-	char *help = "cd: cd [-L|[-P [-e]] [-@]] [dir]\n";
+	char *msg = "unsetenv: unsetenv [VARIABLE]\n\tRemoves an ";
 
-	write(STDOUT_FILENO, help, _strlen(help));
-	help = "\tChange the shell working directory.\n ";
-	write(STDOUT_FILENO, help, _strlen(help));
+	write(STDOUT_FILENO, msg, _strlen(msg));
+	msg = "environmental variable.\n\n\tUpon failure, prints a ";
+	write(STDOUT_FILENO, msg, _strlen(msg));
+	msg = "message to stderr.\n";
+	write(STDOUT_FILENO, msg, _strlen(msg));
 }
-

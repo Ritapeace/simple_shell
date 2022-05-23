@@ -1,6 +1,6 @@
 /*
  * File: builtin.c
- * Auth: Rita Peace & Ogoke Williams
+ * Auth: Rita & Williams
  *
  */
 
@@ -156,4 +156,3 @@ char **replace_aliases(char **args)
 
 	return (args);
 }
- 
